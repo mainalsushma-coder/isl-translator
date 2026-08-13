@@ -1,0 +1,12 @@
+[project]
+name = "isl-ai-translator"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "joblib>=1.5.3",
+    "mediapipe>=1.0.0",
+    "opencv-python>=5.0.0.93",
+    "scikit-learn>=1.9.0",
+]
