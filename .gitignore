@@ -8,3 +8,12 @@ wheels/
 
 # Virtual environments
 .venv
+# External ISL datasets
+external_data/
+
+# Generated sequence features
+data/sequences_v3/
+
+# Private/generated webcam data
+data/webcam_videos_v3/
+data/landmarks_v2.csv

@@ -8,5 +8,6 @@ dependencies = [
     "joblib>=1.5.3",
     "mediapipe>=1.0.0",
     "opencv-python>=5.0.0.93",
+    "pyttsx3>=2.99",
     "scikit-learn>=1.9.0",
 ]
