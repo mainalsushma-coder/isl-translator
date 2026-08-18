@@ -1,284 +1,323 @@
-ISL CareDesk
+# ISL CareDesk
 
-Offline Indian Sign Language recognition and sign-to-speech communication assistant
+An offline, webcam-based Indian Sign Language emergency communication prototype.
 
-ISL CareDesk is a webcam-based prototype that recognises supported Indian Sign
-Language (ISL) gestures, displays the predicted sign and confidence, maps the
-result to a clear sentence, and speaks that sentence aloud. The core recognition
-and speech pipeline runs locally after the required dependencies and models have
-been installed.
+ISL CareDesk recognises supported emergency signs, displays the predicted sign and confidence, converts it into a clear English sentence, and speaks the result aloud using offline text-to-speech.
 
-Project status
+> The current stable demonstration is `app.py`, supporting 8 emergency signs.
 
-Mode
+## Current Status
 
-Status
+| Component | Status |
+|---|---|
+| Emergency sign recognition | Working prototype |
+| Supported signs | 8 |
+| Webcam recognition | Working |
+| Two-hand tracking | Working |
+| Sentence generation | Working |
+| Offline speech | Working |
+| Internet required while running | No |
+| External test accuracy | 97.44% |
 
-Vocabulary
+The reported accuracy is from an untouched external test set after webcam adaptation. It should not be interpreted as universal real-world ISL accuracy.
 
-Evaluation
+## Supported Emergency Signs
 
-Emergency ISL V3
+| Sign | Application output |
+|---|---|
+| `ACCIDENT` | There has been an accident. |
+| `CALL` | Please call for assistance. |
+| `DOCTOR` | I need a doctor. |
+| `HELP` | I need help. |
+| `HOT` | It feels hot. |
+| `LOSE` | I have lost something. |
+| `PAIN` | I am in pain. |
+| `THIEF` | There is a thief. |
 
-Working MVP
+## How It Works
 
-8 signs
-
-97.44% accuracy on the untouched external test set after webcam adaptation
-
-General ISL V4
-
-Under development
-
-50 INCLUDE-50 labels
-
-85.64% accuracy on the official test split; live-webcam adaptation is ongoing
-
-Use app.py for the current stable demonstration. app_general.py is included
-for development and testing and should not yet be presented as a production-ready
-50-sign live translator.
-
-Emergency signs currently supported
-
-ACCIDENT
-
-CALL
-
-DOCTOR
-
-HELP
-
-HOT
-
-LOSE
-
-PAIN
-
-THIEF
-
-How it works
-
-Webcam / training video
-        ↓
+```text
+Webcam video
+    ↓
 OpenCV frame capture
-        ↓
-MediaPipe two-hand landmark detection
-        ↓
+    ↓
+MediaPipe two-hand tracking
+    ↓
+21 landmarks from each detected hand
+    ↓
 48-frame gesture sequence
-        ↓
+    ↓
 Motion-aware temporal feature extraction
-        ↓
+    ↓
 Random Forest classification
-        ↓
-Sign + confidence + top predictions
-        ↓
-Sentence mapping + offline speech
+    ↓
+Predicted sign + confidence + top predictions
+    ↓
+Natural English sentence
+    ↓
+Offline speech using Windows SAPI / pyttsx3
+```
 
-MediaPipe detects up to two hands and extracts 21 landmarks from each hand. A
-complete gesture is represented using 48 evenly sampled frames so the model can
-use motion information instead of classifying only one static image.
+The application records 48 frames for each attempt. This allows the model to analyse hand movement across time instead of classifying only one static image.
 
-Technology stack
+## Technology Stack
 
-Python — application runtime and pipeline integration
+- **Python** — application runtime and pipeline integration
+- **OpenCV** — webcam access, frame processing, interface rendering and keyboard controls
+- **MediaPipe** — detection and tracking of up to two hands
+- **NumPy** — landmark arrays and sequence processing
+- **scikit-learn** — Random Forest classifier
+- **Joblib** — saving and loading the trained model
+- **pyttsx3 / Windows SAPI** — offline text-to-speech
+- **uv** — Python environment and dependency management
 
-OpenCV — webcam capture, video reading, frame preparation, drawing and UI
+## System Requirements
 
-MediaPipe — two-hand detection and 21 landmarks per hand
+The prototype has been tested on Windows.
 
-NumPy — sequence processing, normalisation and temporal feature arrays
+You will need:
 
-Scikit-learn — Random Forest training and evaluation
+- Windows 10 or Windows 11
+- A working webcam
+- Speakers or headphones
+- Git
+- `uv`
+- Adequate lighting with the hands clearly visible
 
-Joblib — saving and loading trained models
+> Run this application locally. GitHub stores the code, but the GitHub website itself cannot open your computer's webcam and application window.
 
-Windows SAPI / pyttsx3 — offline text-to-speech
+## Initial Setup
 
-uv — Python environment and dependency management
+### 1. Open PowerShell
 
-Git and GitHub — version control and collaboration
+Open PowerShell or the VS Code terminal.
 
-Initial setup using GitHub Desktop
+### 2. Install Git
 
-GitHub Desktop clones and manages the repository. It does not directly run the
-Python application. After cloning, open the repository terminal and run the
-commands below.
+Download Git from:
 
-1. Install the required tools
+https://git-scm.com/download/win
 
-GitHub Desktop
+After installation, confirm that it works:
 
-uv
+```powershell
+git --version
+```
 
-A working webcam
+### 3. Install uv
 
-Windows 10 or Windows 11 is recommended for the current offline speech setup
+If `uv` is not already installed, run:
 
-Confirm that uv is installed:
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
 
+Close and reopen PowerShell, then confirm:
+
+```powershell
 uv --version
+```
 
-2. Clone the repository
+### 4. Clone the Repository
 
-Open GitHub Desktop.
+```powershell
+cd D:\projects
+git clone https://github.com/mainalsushma-coder/isl-translator.git
+cd .\isl-translator
+```
 
-Select File → Clone repository.
+You can use another folder instead of `D:\projects` if required.
 
-Open the URL tab.
+### 5. Install Project Dependencies
 
-Paste the GitHub repository URL.
+Run this command from inside the repository:
 
-Choose a local folder and select Clone.
-
-3. Open the repository terminal
-
-In GitHub Desktop, select:
-
-Repository → Open in Terminal
-
-Depending on the installed version, this may be shown as Open in PowerShell
-or Open in Command Prompt.
-
-4. Install/synchronise dependencies
-
-Run this command from the repository folder:
-
+```powershell
 uv sync
+```
 
-5. Verify the required runtime models
+`uv` will create the project environment and install the required Python packages.
 
+### 6. Confirm the Required Models Exist
+
+Run:
+
+```powershell
 Test-Path .\models\hand_landmarker.task
 Test-Path .\models\gesture_sequence_adapted_v3.joblib
+```
 
-Both commands should return:
+Both commands must return:
 
+```text
 True
+```
 
-6. Run the stable Emergency ISL application
+### 7. Start ISL CareDesk
 
+```powershell
 uv run python .\app.py
+```
 
-Application controls
+The webcam window named **ISL CareDesk Prototype** should open.
 
-Key
+## Running an Existing Clone
 
-Action
+If the repository is already on your computer, use:
 
-R
+```powershell
+cd D:\projects\isl-ai-translator
+git switch main
+git pull origin main
+uv sync
+uv run python .\app.py
+```
 
-Record and recognise one sign
+Change the folder path if the project is stored somewhere else.
 
-S
+## Using the Application
 
-Speak the current accepted result
+1. Allow camera access if Windows requests permission.
+2. Sit where light falls toward your face and hands.
+3. Keep your hands, wrists and fingertips inside the camera frame.
+4. Click the application window so that it receives keyboard input.
+5. Press `R`.
+6. Wait for the two-second countdown.
+7. Perform the complete emergency sign during the 48-frame recording.
+8. Wait for the predicted sign, confidence and sentence.
+9. If automatic speech is enabled, the sentence will be spoken aloud.
 
-A
+## Keyboard Controls
 
-Turn automatic speech on or off
+| Key | Action |
+|---|---|
+| `R` | Record and recognise a sign |
+| `S` | Speak the current result again |
+| `A` | Enable or disable automatic speech |
+| `C` | Clear the current result |
+| `H` | Clear conversation history |
+| `Q` | Close the application |
 
-C
+## Recognition Tips
 
-Clear the current result
+For better results:
 
-H
+- Use bright, even lighting.
+- Keep the complete hands visible.
+- Avoid covering one hand with the other unnecessarily.
+- Keep hands approximately around chest height.
+- Begin from a neutral position.
+- Perform the complete gesture, not only its final pose.
+- Use the same sign variant shown in the reference dataset videos.
+- Move naturally during the 48-frame recording.
+- Try again if the application reports an uncertain result.
 
-Clear conversation history
+## Troubleshooting
 
+### `uv` is not recognised
+
+Install `uv` using the command in the setup section, close PowerShell, and open it again.
+
+### Required model not found
+
+Update the repository:
+
+```powershell
+git switch main
+git pull origin main
+```
+
+Then verify the model files again:
+
+```powershell
+Test-Path .\models\hand_landmarker.task
+Test-Path .\models\gesture_sequence_adapted_v3.joblib
+```
+
+### Webcam cannot be opened
+
+Close applications that may already be using the webcam, such as:
+
+- Microsoft Teams
+- Google Meet
+- Zoom
+- Windows Camera
+
+Then run:
+
+```powershell
+uv run python .\app.py
+```
+
+Also verify Windows camera permissions:
+
+```text
+Settings → Privacy & security → Camera
+```
+
+### The prediction is uncertain
+
+- Improve the lighting.
+- Keep both hands fully visible.
+- Move slightly farther away from the camera.
+- Perform the complete gesture within the recording period.
+- Repeat the sign using the reference variant.
+
+### No speech is heard
+
+- Check the Windows volume.
+- Confirm the correct speaker is selected.
+- Press `S` to speak the result manually.
+- Restart the application if the Windows speech service is unavailable.
+
+## Model Evaluation
+
+The emergency sequence model was developed using:
+
+- Emergency ISL videos from multiple participants
+- MediaPipe hand landmarks
+- 48-frame motion sequences
+- Signer-disjoint evaluation
+- Additional webcam adaptation samples
+
+The adapted model achieved **97.44% accuracy** and **0.9747 Macro F1** on the untouched external test set.
+
+These numbers represent performance on the available research dataset. Real-world performance can still be affected by lighting, camera position, sign variation, occlusion and signer differences.
+
+## Important Limitations
+
+- This is a research and hackathon prototype.
+- It recognises only the eight supported emergency signs.
+- It does not understand continuous ISL sentences.
+- It does not replace a qualified ISL interpreter.
+- Regional and individual sign variations may affect predictions.
+- Unsupported signs should not be treated as valid emergency translations.
+- Further testing with more Deaf ISL users and sign-language experts is required.
+
+## Privacy and Offline Operation
+
+After the dependencies and model files have been installed, the recognition and speech pipeline runs locally.
+
+The stable application does not require:
+
+- A cloud AI API
+- An internet connection during recognition
+- Wearable sensors
+- Special gloves
+- External tracking hardware
+
+Webcam frames are processed locally by the application.
+
+## Stop the Application
+
+Press:
+
+```text
 Q
+```
 
-Quit the application
+If the application window is unresponsive, return to the PowerShell terminal and press:
 
-For the best result, use front-facing light and keep the complete hands, wrists
-and fingertips visible at chest height. Perform the complete reference gesture
-once during recording.
-
-General ISL V4 — development mode
-
-The separate 50-label INCLUDE-50 model has been trained and evaluated, but its
-live-webcam generalisation is still being improved. If the required model is
-present, contributors can launch it with:
-
-Test-Path .\models\gesture_sequence_include50_v4.joblib
-uv run python .\app_general.py
-
-Low-confidence results are intentionally shown as UNCERTAIN. Do not lower the
-threshold only to force a prediction; additional multi-signer webcam adaptation
-is the correct next step.
-
-Repository data policy
-
-Downloaded datasets, extracted landmark sequences and personal webcam recordings
-are intentionally excluded from GitHub. They can be large and may contain
-participant data.
-
-The repository should contain source code, dependency files and the small model
-files required for running the prototype. It should not contain:
-
-external_data/
-data/sequences_v3/
-data/sequences_include50_v4/
-data/webcam_videos_v3/
-
-Troubleshooting
-
-uv is not recognised
-
-Install uv, close the terminal, reopen it from GitHub Desktop and run:
-
-uv --version
-
-The webcam does not open
-
-Close Camera, Teams, Zoom, Google Meet and other programs using the webcam.
-
-Allow camera access under Windows Settings → Privacy & security → Camera.
-
-Restart the application.
-
-A model file is missing
-
-Pull the latest repository changes in GitHub Desktop and confirm that the model
-files listed in the setup section are present. The large source datasets are not
-required just to run the stable application.
-
-Speech is unavailable
-
-Run uv sync again and confirm that Windows audio is working. The project uses
-Windows SAPI as its primary offline speech backend and pyttsx3 as a fallback.
-
-Current scope and limitations
-
-The current MVP performs isolated-sign recognition, not continuous ISL
-sentence translation.
-
-The stable demo supports eight emergency signs.
-
-General 50-label live recognition is under development.
-
-Facial expression and full-body pose are not yet part of the stable classifier.
-
-Performance can be affected by poor lighting, hand occlusion, camera angle,
-signer variation and regional ISL variants.
-
-Emergency live-location sharing is a planned feature and is not part of the
-current offline MVP. Sending a message would require user consent and network
-connectivity.
-
-Datasets and research foundation
-
-Emergency ISL Gesture Video Dataset — Mendeley Data
-
-AI4Bharat INCLUDE dataset and official splits — Hugging Face
-
-INCLUDE original video archive — Zenodo
-
-INCLUDE research paper — ACM Multimedia 2020
-
-Indian Sign Language Research and Training Centre
-
-Development note
-
-This repository is an engineering prototype and research project. Predictions
-should not be treated as a replacement for a qualified ISL interpreter in
-medical, legal or other high-stakes situations.
-
+```text
+Ctrl+C
+```
