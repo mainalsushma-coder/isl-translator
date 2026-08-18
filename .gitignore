@@ -17,3 +17,18 @@ data/sequences_v3/
 # Private/generated webcam data
 data/webcam_videos_v3/
 data/landmarks_v2.csv
+
+# Generated INCLUDE-50 sequences
+data/sequences_include50_v4/
+# Downloaded and generated datasets
+external_data/
+data/
+
+# Personal webcam recordings and archives
+webcam_data_*.zip
+*.partial
+
+# Python environment/cache
+.venv/
+__pycache__/
+*.py[cod]

@@ -61,14 +61,20 @@ speech_queue = queue.Queue()
 
 speech_state = {
     "ready": False,
+    "speaking": False,
+    "backend": "",
+    "last_message": "",
     "error": "",
 }
 
 
 def speech_worker():
+    pythoncom = None
+    sapi_voice = None
+
     try:
-        # Required when SAPI is started in a background
-        # thread on Windows.
+        # Every background thread that uses Windows speech
+        # must initialise COM inside that same thread.
         try:
             import pythoncom
 
@@ -76,26 +82,66 @@ def speech_worker():
         except ImportError:
             pythoncom = None
 
-        engine = pyttsx3.init()
+        # pyttsx3 can occasionally stop producing audio after
+        # its first runAndWait() call on Windows. Use Windows'
+        # native offline SAPI voice as the primary backend.
+        try:
+            from win32com.client import Dispatch
 
-        engine.setProperty("rate", 165)
-        engine.setProperty("volume", 1.0)
+            sapi_voice = Dispatch("SAPI.SpVoice")
+            sapi_voice.Rate = 0
+            sapi_voice.Volume = 100
+            speech_state["backend"] = "WINDOWS_SAPI"
+        except Exception:
+            # pyttsx3 remains available as a fallback. A fresh
+            # engine is created for every message so a stalled
+            # event loop cannot block later messages.
+            sapi_voice = None
+            speech_state["backend"] = "PYTTSX3_FALLBACK"
 
         speech_state["ready"] = True
 
         while True:
             message = speech_queue.get()
 
-            if message is None:
-                break
+            try:
+                if message is None:
+                    break
 
-            engine.say(message)
-            engine.runAndWait()
+                message = str(message).strip()
 
-            speech_queue.task_done()
+                if not message:
+                    continue
+
+                speech_state["speaking"] = True
+                speech_state["error"] = ""
+
+                if sapi_voice is not None:
+                    # Speak synchronously inside this worker.
+                    # The camera/UI thread remains responsive.
+                    sapi_voice.Speak(message)
+                else:
+                    engine = pyttsx3.init()
+                    engine.setProperty("rate", 165)
+                    engine.setProperty("volume", 1.0)
+                    engine.say(message)
+                    engine.runAndWait()
+                    engine.stop()
+
+                speech_state["last_message"] = message
+
+            except Exception as error:
+                # Keep the worker alive so one speech failure
+                # does not disable every later result.
+                speech_state["error"] = str(error)
+
+            finally:
+                speech_state["speaking"] = False
+                speech_queue.task_done()
 
     except Exception as error:
         speech_state["error"] = str(error)
+        speech_state["ready"] = False
 
     finally:
         try:
@@ -962,3 +1008,4 @@ finally:
 
     speech_queue.put(None)
     speech_thread.join(timeout=2.0)
+    
